@@ -1,0 +1,22 @@
+{
+  "name": "redirect-cleaner",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@babel/core": "^7.27.4",
+    "@babel/generator": "^7.27.5",
+    "@babel/parser": "^7.27.5",
+    "@babel/traverse": "^7.27.4",
+    "@babel/types": "^7.27.6"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.0"
+  }
+}
