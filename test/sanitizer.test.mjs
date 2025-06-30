@@ -28,7 +28,9 @@ describe('sanitizeCode', () => {
         document.title = "New Title";
       `;
       const result = sanitizeCode(input);
-      expect(result.replace(/\s+/g, ' ').trim()).toBe(input.replace(/\s+/g, ' ').trim());
+      expect(result.replace(/\s+/g, ' ').trim()).toBe(
+        input.replace(/\s+/g, ' ').trim()
+      );
     });
   });
 
@@ -84,44 +86,51 @@ describe('sanitizeCode', () => {
         alert("still safe");
       `;
       const result = sanitizeCode(input);
-      const lines = result.split('\n').map(line => line.trim()).filter(line => line);
+      const lines = result
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line);
       expect(lines.includes('const x = 5;')).toBe(true);
       expect(lines.includes('console.log("safe");')).toBe(true);
       expect(lines.includes('alert("still safe");')).toBe(true);
+      expect(lines.includes('window.location.href = "https://bad.com";')).toBe(
+        false
+      );
       expect(result.includes('location')).toBe(false);
     });
   });
 
   describe('broken/malformed code', () => {
-    it('should return empty string for syntax errors', () => {
+    it('should return original code for syntax errors', () => {
       const input = 'function broken( { invalid syntax';
       const result = sanitizeCode(input);
-      expect(result).toBe('');
+      expect(result).toBe(input);
     });
 
-    it('should return empty string for incomplete expressions', () => {
+    it('should return original code for incomplete expressions', () => {
       const input = 'if (true) { incomplete';
       const result = sanitizeCode(input);
-      expect(result).toBe('');
+      expect(result).toBe(input);
     });
 
-    it('should return empty string for invalid tokens', () => {
+    it('should return original code for invalid tokens', () => {
       const input = 'const x = @#$%^&*;';
       const result = sanitizeCode(input);
-      expect(result).toBe('');
+      expect(result).toBe(input);
     });
 
-    it('should return empty string for unmatched brackets', () => {
+    it('should return original code for unmatched brackets', () => {
       const input = 'function test() { console.log("missing closing bracket";';
       const result = sanitizeCode(input);
-      expect(result).toBe('');
+      expect(result).toBe(input);
     });
   });
 
   describe('exploitation attempts', () => {
     it('should not execute code during parsing', () => {
       // This would be dangerous if path.evaluate() was still used
-      const input = 'const evil = (() => { throw new Error("Code executed!"); })(); location = evil;';
+      const input =
+        'const evil = (() => { throw new Error("Code executed!"); })(); location = evil;';
       const result = sanitizeCode(input);
       // Should not throw an error and should remove the location assignment
       expect(result.includes('location')).toBe(false);
@@ -140,6 +149,18 @@ describe('sanitizeCode', () => {
       expect(result.includes('const href = "href"')).toBe(true);
       expect(result.includes('window[prop]')).toBe(false);
       expect(result.includes('location[href]')).toBe(false);
+    });
+
+    it('should handle code without semi colons', () => {
+      const input = `
+      function test() {
+        const prop = "location";
+        window[prop] = "https://evil.com"
+      }`;
+      const result = sanitizeCode(input);
+      // Should preserve variable declarations but remove location assignments
+      expect(result.includes('const prop = "location"')).toBe(true);
+      expect(result.includes('window[prop]')).toBe(false);
     });
 
     it('should handle obfuscated location access', () => {
@@ -186,7 +207,8 @@ describe('sanitizeCode', () => {
     });
 
     it('should not execute code in string literals', () => {
-      const input = 'const code = "location = \\"https://evil.com\\""; eval(code);';
+      const input =
+        'const code = "location = \\"https://evil.com\\""; eval(code);';
       const result = sanitizeCode(input);
       // Should preserve the code as it's just a string literal and eval call
       expect(result.includes('const code =')).toBe(true);
